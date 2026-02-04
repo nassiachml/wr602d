@@ -21,8 +21,6 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * The token handler validates the token on the OIDC server and retrieves the user identifier.
- *
- * @experimental
  */
 final class OidcUserInfoTokenHandler implements AccessTokenHandlerInterface
 {
@@ -31,7 +29,7 @@ final class OidcUserInfoTokenHandler implements AccessTokenHandlerInterface
     public function __construct(
         private HttpClientInterface $client,
         private ?LoggerInterface $logger = null,
-        private string $claim = 'sub'
+        private string $claim = 'sub',
     ) {
     }
 
@@ -45,11 +43,15 @@ final class OidcUserInfoTokenHandler implements AccessTokenHandlerInterface
             ])->toArray();
 
             if (empty($claims[$this->claim])) {
-                throw new MissingClaimException(sprintf('"%s" claim not found on OIDC server response.', $this->claim));
+                throw new MissingClaimException(\sprintf('"%s" claim not found on OIDC server response.', $this->claim));
             }
 
             // UserLoader argument can be overridden by a UserProvider on AccessTokenAuthenticator::authenticate
-            return new UserBadge($claims[$this->claim], new FallbackUserLoader(fn () => $this->createUser($claims)), $claims);
+            return new UserBadge($claims[$this->claim], new FallbackUserLoader(function () use ($claims) {
+                $claims['user_identifier'] = $claims[$this->claim];
+
+                return $this->createUser($claims);
+            }), $claims);
         } catch (\Exception $e) {
             $this->logger?->error('An error occurred on OIDC server.', [
                 'error' => $e->getMessage(),

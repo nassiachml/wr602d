@@ -44,7 +44,7 @@ class Collection extends Composite
 
     public function __construct(mixed $fields = null, ?array $groups = null, mixed $payload = null, ?bool $allowExtraFields = null, ?bool $allowMissingFields = null, ?string $extraFieldsMessage = null, ?string $missingFieldsMessage = null)
     {
-        if (\is_array($fields) && ([] === $fields || ($firstField = reset($fields)) instanceof Constraint || ($firstField[0] ?? null) instanceof Constraint)) {
+        if (self::isFieldsOption($fields)) {
             $fields = ['fields' => $fields];
         }
 
@@ -64,7 +64,7 @@ class Collection extends Composite
         parent::initializeNestedConstraints();
 
         if (!\is_array($this->fields)) {
-            throw new ConstraintDefinitionException(sprintf('The option "fields" is expected to be an array in constraint "%s".', __CLASS__));
+            throw new ConstraintDefinitionException(\sprintf('The option "fields" is expected to be an array in constraint "%s".', __CLASS__));
         }
 
         foreach ($this->fields as $fieldName => $field) {
@@ -88,5 +88,32 @@ class Collection extends Composite
     protected function getCompositeOption(): string
     {
         return 'fields';
+    }
+
+    private static function isFieldsOption($options): bool
+    {
+        if (!\is_array($options)) {
+            return false;
+        }
+
+        foreach ($options as $optionOrField) {
+            if ($optionOrField instanceof Constraint) {
+                return true;
+            }
+
+            if (null === $optionOrField) {
+                continue;
+            }
+
+            if (!\is_array($optionOrField)) {
+                return false;
+            }
+
+            if ($optionOrField && !($optionOrField[0] ?? null) instanceof Constraint) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

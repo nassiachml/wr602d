@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+{% block title %}Générer un PDF - Paperless Engine{% endblock %}
+{% block body %}
+<h1>Générer un PDF</h1>
+<p class="text-muted" style="margin-top: -0.5rem; margin-bottom: 1.5rem;">Choisissez la source : URL, fichier ou contenu HTML.</p>
+
+<div class="quota-card">
+  <p class="section-tag">Quota du jour</p>
+  {% set used = used_today %}
+  {% set max = max_per_day %}
+  {% set pct = max > 0 ? min(100, (used / max) * 100) : 0 %}
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span><strong>{{ used }}</strong> / {{ max > 0 ? max : '∞' }} PDF</span>
+      <span>{{ max > 0 ? (pct|round) ~ '%' : 'Illimité' }}</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-bar
+        {% if max == 0 or pct == 0 %}progress-bar--safe
+        {% elseif pct >= 100 %}progress-bar--full
+        {% elseif pct >= 80 %}progress-bar--danger
+        {% elseif pct >= 50 %}progress-bar--warn
+        {% else %}progress-bar--safe{% endif %}"
+        style="width: {{ max > 0 ? pct ~ '%' : '0%' }};"></div>
+    </div>
+  </div>
+</div>
+
+<form method="post" action="{{ path('app_pdf_generate') }}" enctype="multipart/form-data" class="card">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('pdf_generate') }}">
+    <div class="form-group">
+        <label>Type de conversion</label>
+        <select name="type" id="pdf-type">
+            <option value="url">URL → PDF</option>
+            <option value="file">Fichier → PDF</option>
+            <option value="wysiwyg">WYSIWYG (HTML)</option>
+        </select>
+    </div>
+    <div class="form-group" id="group-url">
+        <label for="url">URL</label>
+        <input type="url" id="url" name="url" placeholder="https://example.com" value="{{ prefill_url|default('')|e('html_attr') }}">
+    </div>
+    <div class="form-group" id="group-file" style="display:none">
+        <label for="file">Fichier (HTML, Office)</label>
+        <input type="file" id="file" name="file" accept=".html,.htm,.doc,.docx,.odt">
+    </div>
+    <div class="form-group" id="group-wysiwyg" style="display:none">
+        <label for="html">Contenu HTML</label>
+        <textarea id="html" name="html" rows="10" placeholder="<p>Contenu...</p>"></textarea>
+    </div>
+    <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" name="add_to_queue" value="1"> Ajouter à la file d'attente</label>
+    </div>
+    <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" name="send_by_email" value="1"> Envoyer par email</label>
+    </div>
+    <div class="form-group">
+        <label>Contacts (pour envoi email)</label>
+        {% for c in contacts %}
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" name="contact_ids[]" value="{{ c.id }}"> {{ c.name ?? c.email }}</label>
+        {% else %}
+            <span style="color: var(--text-muted)">Aucun contact. <a href="{{ path('app_contact_new') }}">Ajouter</a></span>
+        {% endfor %}
+    </div>
+    <button type="submit" class="btn">Générer le PDF</button>
+</form>
+<script>
+document.getElementById('pdf-type').onchange = function() {
+    var v = this.value;
+    document.getElementById('group-url').style.display = v === 'url' ? 'block' : 'none';
+    document.getElementById('group-file').style.display = v === 'file' ? 'block' : 'none';
+    document.getElementById('group-wysiwyg').style.display = v === 'wysiwyg' ? 'block' : 'none';
+};
+document.getElementById('pdf-type').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

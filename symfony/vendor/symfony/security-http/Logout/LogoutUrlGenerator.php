@@ -129,7 +129,7 @@ class LogoutUrlGenerator
                 return $this->listeners[$key];
             }
 
-            throw new \InvalidArgumentException(sprintf('No LogoutListener found for firewall key "%s".', $key));
+            throw new \InvalidArgumentException(\sprintf('No LogoutListener found for firewall key "%s".', $key));
         }
 
         // Fetch the current provider key from token, if possible
@@ -146,8 +146,8 @@ class LogoutUrlGenerator
         }
 
         // Fetch from injected current firewall information, if possible
-        if (isset($this->listeners[$this->currentFirewallName])) {
-            return $this->listeners[$this->currentFirewallName];
+        if (isset($this->listeners[$this->currentFirewallName ?? ''])) {
+            return $this->listeners[$this->currentFirewallName ?? ''];
         }
 
         foreach ($this->listeners as $listener) {

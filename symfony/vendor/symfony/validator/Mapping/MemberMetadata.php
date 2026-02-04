@@ -34,21 +34,21 @@ abstract class MemberMetadata extends GenericMetadata implements PropertyMetadat
      *           class' serialized representation. Do not access it. Use
      *           {@link getClassName()} instead.
      */
-    public $class;
+    public string $class;
 
     /**
      * @internal This property is public in order to reduce the size of the
      *           class' serialized representation. Do not access it. Use
      *           {@link getName()} instead.
      */
-    public $name;
+    public string $name;
 
     /**
      * @internal This property is public in order to reduce the size of the
      *           class' serialized representation. Do not access it. Use
      *           {@link getPropertyName()} instead.
      */
-    public $property;
+    public string $property;
 
     /**
      * @var \ReflectionMethod[]|\ReflectionProperty[]
@@ -151,7 +151,7 @@ abstract class MemberMetadata extends GenericMetadata implements PropertyMetadat
     private function checkConstraint(Constraint $constraint): void
     {
         if (!\in_array(Constraint::PROPERTY_CONSTRAINT, (array) $constraint->getTargets(), true)) {
-            throw new ConstraintDefinitionException(sprintf('The constraint "%s" cannot be put on properties or getters.', get_debug_type($constraint)));
+            throw new ConstraintDefinitionException(\sprintf('The constraint "%s" cannot be put on properties or getters.', get_debug_type($constraint)));
         }
 
         if ($constraint instanceof Composite) {

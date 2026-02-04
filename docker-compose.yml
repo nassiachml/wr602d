@@ -1,0 +1,41 @@
+services:
+  symfony:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: wr602d_symfony
+    working_dir: /var/www/symfony
+    volumes:
+      - ./symfony:/var/www/symfony
+    ports:
+      - "8001:80"
+    environment:
+      - APP_ENV=dev
+      - DATABASE_URL=mysql://app:!ChangeMe!@database:3306/app
+      - GOTENBERG_URL=http://gotenberg:3000
+      - MAILER_DSN=null://null
+    depends_on:
+      - database
+      - gotenberg
+
+  database:
+    image: mysql:8.0
+    container_name: wr602d_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: '!ChangeMe!'
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  gotenberg:
+    image: gotenberg/gotenberg:7
+    container_name: wr602d_gotenberg
+    ports:
+      - "3001:3000"
+
+volumes:
+  mysql_data:

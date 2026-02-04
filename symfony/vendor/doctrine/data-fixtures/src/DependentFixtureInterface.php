@@ -15,5 +15,5 @@ interface DependentFixtureInterface
      *
      * @phpstan-return array<class-string<FixtureInterface>>
      */
-    public function getDependencies();
+    public function getDependencies(): array;
 }

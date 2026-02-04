@@ -37,7 +37,7 @@ class RouteCollection implements \IteratorAggregate, \Countable
     /**
      * @var array<string, Alias>
      */
-    private $aliases = [];
+    private array $aliases = [];
 
     /**
      * @var array<string, ResourceInterface>
@@ -239,7 +239,13 @@ class RouteCollection implements \IteratorAggregate, \Countable
         }
 
         foreach ($this->aliases as $name => $alias) {
-            $prefixedAliases[$prefix.$name] = $alias->withId($prefix.$alias->getId());
+            $targetId = $alias->getId();
+
+            if (isset($this->routes[$targetId]) || isset($this->aliases[$targetId])) {
+                $targetId = $prefix.$targetId;
+            }
+
+            $prefixedAliases[$prefix.$name] = $alias->withId($targetId);
         }
 
         $this->routes = $prefixedRoutes;
@@ -387,7 +393,7 @@ class RouteCollection implements \IteratorAggregate, \Countable
     public function addAlias(string $name, string $alias): Alias
     {
         if ($name === $alias) {
-            throw new InvalidArgumentException(sprintf('Route alias "%s" can not reference itself.', $name));
+            throw new InvalidArgumentException(\sprintf('Route alias "%s" can not reference itself.', $name));
         }
 
         unset($this->routes[$name], $this->priorities[$name]);

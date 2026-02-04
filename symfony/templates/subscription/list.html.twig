@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+{% block title %}Abonnements - Paperless Engine{% endblock %}
+{% block body %}
+<h1>Abonnements</h1>
+<p class="text-muted" style="margin-top: -0.5rem; margin-bottom: 1.5rem;">Choisissez votre offre et changez à tout moment.</p>
+
+{# Quota du jour #}
+<div class="quota-card">
+  <p class="section-tag">Quota du jour</p>
+  {% set used = used_today|default(0) %}
+  {% set max = max_per_day|default(0) %}
+  {% set pct = max > 0 ? min(100, (used / max) * 100) : 0 %}
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span><strong>{{ used }}</strong> PDF généré{{ used > 1 ? 's' : '' }} aujourd'hui</span>
+      <span>{{ max > 0 ? used ~ ' / ' ~ max : 'Illimité' }}</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-bar
+        {% if max == 0 or pct == 0 %}progress-bar--safe
+        {% elseif pct >= 100 %}progress-bar--full
+        {% elseif pct >= 80 %}progress-bar--danger
+        {% elseif pct >= 50 %}progress-bar--warn
+        {% else %}progress-bar--safe{% endif %}"
+        style="width: {{ max > 0 ? pct ~ '%' : '0%' }};"></div>
+    </div>
+  </div>
+</div>
+
+{# 3 cartes abonnement #}
+<div class="subscription-grid">
+  {% for sub in subscriptions %}
+    {% set isCurrent = current and current.id == sub.id %}
+    <div class="subscription-card {{ isCurrent ? 'subscription-card--current' : '' }}">
+      <div class="subscription-card__header">
+        <h2 class="subscription-card__name">{{ sub.name }}</h2>
+        {% if isCurrent %}
+          <span class="subscription-card__badge">Actuel</span>
+        {% endif %}
+      </div>
+      <p class="subscription-card__desc">{{ sub.description }}</p>
+      <div class="subscription-card__price">
+        {% if sub.price == 0 %}
+          <span class="subscription-card__amount">Gratuit</span>
+        {% else %}
+          <span class="subscription-card__amount">{{ sub.price|number_format(2, ',') }} €</span>
+          <span class="subscription-card__period">/ mois</span>
+        {% endif %}
+      </div>
+      <p class="subscription-card__quota">
+        {{ sub.maxPdfsPerDay == 0 ? 'PDF illimités' : sub.maxPdfsPerDay ~ ' PDF / jour' }}
+      </p>
+      <form method="post" action="{{ path('app_subscriptions') }}" class="subscription-card__form">
+        <input type="hidden" name="_token" value="{{ csrf_token('subscription_switch') }}">
+        <input type="hidden" name="subscription" value="{{ sub.id }}">
+        <button type="submit" class="btn {{ isCurrent ? 'btn-secondary' : '' }}" {{ isCurrent ? 'disabled' : '' }}>
+          {{ isCurrent ? 'Offre actuelle' : 'Choisir cette offre' }}
+        </button>
+      </form>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

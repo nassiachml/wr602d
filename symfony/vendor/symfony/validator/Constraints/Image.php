@@ -43,6 +43,7 @@ class Image extends File
         self::EMPTY_ERROR => 'EMPTY_ERROR',
         self::TOO_LARGE_ERROR => 'TOO_LARGE_ERROR',
         self::INVALID_MIME_TYPE_ERROR => 'INVALID_MIME_TYPE_ERROR',
+        self::FILENAME_TOO_LONG => 'FILENAME_TOO_LONG',
         self::SIZE_NOT_DETECTED_ERROR => 'SIZE_NOT_DETECTED_ERROR',
         self::TOO_WIDE_ERROR => 'TOO_WIDE_ERROR',
         self::TOO_NARROW_ERROR => 'TOO_NARROW_ERROR',
@@ -63,7 +64,7 @@ class Image extends File
      */
     protected static $errorNames = self::ERROR_NAMES;
 
-    public $mimeTypes = 'image/*';
+    public $mimeTypes;
     public $minWidth;
     public $maxWidth;
     public $maxHeight;
@@ -139,7 +140,9 @@ class Image extends File
         ?string $allowPortraitMessage = null,
         ?string $corruptedMessage = null,
         ?array $groups = null,
-        mixed $payload = null
+        mixed $payload = null,
+        array|string|null $extensions = null,
+        ?string $extensionsMessage = null,
     ) {
         parent::__construct(
             $options,
@@ -162,7 +165,9 @@ class Image extends File
             $uploadExtensionErrorMessage,
             $uploadErrorMessage,
             $groups,
-            $payload
+            $payload,
+            $extensions,
+            $extensionsMessage,
         );
 
         $this->minWidth = $minWidth ?? $this->minWidth;
@@ -190,6 +195,10 @@ class Image extends File
         $this->allowLandscapeMessage = $allowLandscapeMessage ?? $this->allowLandscapeMessage;
         $this->allowPortraitMessage = $allowPortraitMessage ?? $this->allowPortraitMessage;
         $this->corruptedMessage = $corruptedMessage ?? $this->corruptedMessage;
+
+        if (null === $this->mimeTypes && [] === $this->extensions) {
+            $this->mimeTypes = 'image/*';
+        }
 
         if (!\in_array('image/*', (array) $this->mimeTypes, true) && !\array_key_exists('mimeTypesMessage', $options ?? []) && null === $mimeTypesMessage) {
             $this->mimeTypesMessage = 'The mime type of the file is invalid ({{ type }}). Allowed mime types are {{ types }}.';

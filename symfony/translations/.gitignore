@@ -1,0 +1,4 @@
+*.xlf
+*.xliff
+!messages.fr.yaml
+!messages.en.yaml

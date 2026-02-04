@@ -58,8 +58,9 @@ class Length extends Constraint
     public $max;
     public $min;
     public $charset = 'UTF-8';
+    /** @var callable|null */
     public $normalizer;
-    /* @var self::COUNT_* */
+    /** @var self::COUNT_* */
     public string $countUnit = self::COUNT_CODEPOINTS;
 
     /**
@@ -78,7 +79,7 @@ class Length extends Constraint
         ?string $charsetMessage = null,
         ?array $groups = null,
         mixed $payload = null,
-        array $options = []
+        array $options = [],
     ) {
         if (\is_array($exactly)) {
             $options = array_merge($exactly, $options);
@@ -107,15 +108,15 @@ class Length extends Constraint
         $this->charsetMessage = $charsetMessage ?? $this->charsetMessage;
 
         if (null === $this->min && null === $this->max) {
-            throw new MissingOptionsException(sprintf('Either option "min" or "max" must be given for constraint "%s".', __CLASS__), ['min', 'max']);
+            throw new MissingOptionsException(\sprintf('Either option "min" or "max" must be given for constraint "%s".', __CLASS__), ['min', 'max']);
         }
 
         if (null !== $this->normalizer && !\is_callable($this->normalizer)) {
-            throw new InvalidArgumentException(sprintf('The "normalizer" option must be a valid callable ("%s" given).', get_debug_type($this->normalizer)));
+            throw new InvalidArgumentException(\sprintf('The "normalizer" option must be a valid callable ("%s" given).', get_debug_type($this->normalizer)));
         }
 
         if (!\in_array($this->countUnit, self::VALID_COUNT_UNITS)) {
-            throw new InvalidArgumentException(sprintf('The "countUnit" option must be one of the "%s"::COUNT_* constants ("%s" given).', __CLASS__, $this->countUnit));
+            throw new InvalidArgumentException(\sprintf('The "countUnit" option must be one of the "%s"::COUNT_* constants ("%s" given).', __CLASS__, $this->countUnit));
         }
     }
 }

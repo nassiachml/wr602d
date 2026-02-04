@@ -6,50 +6,77 @@ namespace Doctrine\Common\DataFixtures\Purger;
 
 use Doctrine\ODM\MongoDB\DocumentManager;
 
+use function method_exists;
+
 /**
  * Class responsible for purging databases of data before reloading data fixtures.
- *
- * @final since 1.8.0
  */
-class MongoDBPurger implements PurgerInterface
+final class MongoDBPurger implements MongoDBPurgerInterface
 {
-    private ?DocumentManager $dm;
+    private MongoDBPurgeMode $purgeMode = MongoDBPurgeMode::Drop;
 
     /**
      * Construct new purger instance.
      *
      * @param DocumentManager|null $dm DocumentManager instance used for persistence.
      */
-    public function __construct(?DocumentManager $dm = null)
+    public function __construct(private DocumentManager|null $dm = null)
     {
-        $this->dm = $dm;
+    }
+
+    /**
+     * If the purge should be done through collection drop() or deleteMany()
+     */
+    public function setPurgeMode(MongoDBPurgeMode $mode): void
+    {
+        $this->purgeMode = $mode;
+    }
+
+    public function getPurgeMode(): MongoDBPurgeMode
+    {
+        return $this->purgeMode;
     }
 
     /**
      * Set the DocumentManager instance this purger instance should use.
-     *
-     * @return void
      */
-    public function setDocumentManager(DocumentManager $dm)
+    public function setDocumentManager(DocumentManager $dm): void
     {
         $this->dm = $dm;
     }
 
     /**
      * Retrieve the DocumentManager instance this purger instance is using.
-     *
-     * @return DocumentManager
      */
-    public function getObjectManager()
+    public function getObjectManager(): DocumentManager
     {
         return $this->dm;
     }
 
-    /** @inheritDoc */
-    public function purge()
+    public function purge(): void
     {
-        $metadatas = $this->dm->getMetadataFactory()->getAllMetadata();
-        foreach ($metadatas as $metadata) {
+        match ($this->purgeMode) {
+            MongoDBPurgeMode::Delete => $this->purgeWithDelete(),
+            MongoDBPurgeMode::Drop => $this->purgeWithDrop(),
+        };
+    }
+
+    private function purgeWithDelete(): void
+    {
+        $allMetadata = $this->dm->getMetadataFactory()->getAllMetadata();
+        foreach ($allMetadata as $metadata) {
+            if ($metadata->isMappedSuperclass) {
+                continue;
+            }
+
+            $this->dm->getDocumentCollection($metadata->name)->deleteMany([]);
+        }
+    }
+
+    private function purgeWithDrop(): void
+    {
+        $allMetadata = $this->dm->getMetadataFactory()->getAllMetadata();
+        foreach ($allMetadata as $metadata) {
             if ($metadata->isMappedSuperclass) {
                 continue;
             }
@@ -57,6 +84,12 @@ class MongoDBPurger implements PurgerInterface
             $this->dm->getDocumentCollection($metadata->name)->drop();
         }
 
-        $this->dm->getSchemaManager()->ensureIndexes();
+        $schemaManager = $this->dm->getSchemaManager();
+        $schemaManager->createCollections();
+        $schemaManager->ensureIndexes();
+
+        // Requires doctrine/mongodb-odm 2.8
+        // @phpstan-ignore function.alreadyNarrowedType
+        method_exists($schemaManager, 'createSearchIndexes') && $schemaManager->createSearchIndexes();
     }
 }

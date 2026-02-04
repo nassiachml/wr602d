@@ -25,10 +25,12 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
  */
 final class AsyncContext
 {
+    /** @var callable|null */
     private $passthru;
     private HttpClientInterface $client;
     private ResponseInterface $response;
     private array $info = [];
+    /** @var resource|null */
     private $content;
     private int $offset;
 
@@ -165,7 +167,7 @@ final class AsyncContext
         }
         if (0 < ($info['max_duration'] ?? 0) && 0 < ($info['total_time'] ?? 0)) {
             if (0 >= $options['max_duration'] = $info['max_duration'] - $info['total_time']) {
-                throw new TransportException(sprintf('Max duration was reached for "%s".', $info['url']));
+                throw new TransportException(\sprintf('Max duration was reached for "%s".', $info['url']));
             }
         }
 

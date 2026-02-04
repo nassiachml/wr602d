@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\HttpKernel\CacheClearer\ChainCacheClearer;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerAggregate;
@@ -47,7 +48,7 @@ use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\HttpKernel\UriSigner;
+use Symfony\Component\HttpKernel\UriSigner as HttpKernelUriSigner;
 use Symfony\Component\Runtime\Runner\Symfony\HttpKernelRunner;
 use Symfony\Component\Runtime\Runner\Symfony\ResponseRunner;
 use Symfony\Component\Runtime\SymfonyRuntime;
@@ -99,6 +100,7 @@ return static function (ContainerConfigurator $container) {
         ->alias(HttpKernelInterface::class, 'http_kernel')
 
         ->set('request_stack', RequestStack::class)
+            ->tag('kernel.reset', ['method' => 'resetRequestFormats', 'on_invalid' => 'ignore'])
             ->public()
         ->alias(RequestStack::class, 'request_stack')
 
@@ -129,7 +131,7 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 tagged_iterator('kernel.cache_warmer'),
                 param('kernel.debug'),
-                sprintf('%s/%sDeprecations.log', param('kernel.build_dir'), param('kernel.container_class')),
+                \sprintf('%s/%sDeprecations.log', param('kernel.build_dir'), param('kernel.container_class')),
             ])
             ->tag('container.no_preload')
 
@@ -157,6 +159,8 @@ return static function (ContainerConfigurator $container) {
                 param('kernel.secret'),
             ])
         ->alias(UriSigner::class, 'uri_signer')
+        ->alias(HttpKernelUriSigner::class, 'uri_signer')
+            ->deprecate('symfony/framework-bundle', '6.4', 'The "%alias_id%" alias is deprecated, use "'.UriSigner::class.'" instead.')
 
         ->set('config_cache_factory', ResourceCheckerConfigCacheFactory::class)
             ->args([

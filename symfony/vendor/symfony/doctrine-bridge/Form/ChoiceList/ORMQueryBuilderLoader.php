@@ -16,6 +16,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Bridge\Doctrine\Types\AbstractUidType;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 
 /**
@@ -26,17 +27,9 @@ use Symfony\Component\Form\Exception\TransformationFailedException;
  */
 class ORMQueryBuilderLoader implements EntityLoaderInterface
 {
-    /**
-     * Contains the query builder that builds the query for fetching the
-     * entities.
-     *
-     * This property should only be accessed through queryBuilder.
-     */
-    private QueryBuilder $queryBuilder;
-
-    public function __construct(QueryBuilder $queryBuilder)
-    {
-        $this->queryBuilder = $queryBuilder;
+    public function __construct(
+        private readonly QueryBuilder $queryBuilder,
+    ) {
     }
 
     public function getEntities(): array
@@ -75,8 +68,8 @@ class ORMQueryBuilderLoader implements EntityLoaderInterface
 
             // Filter out non-integer values (e.g. ""). If we don't, some
             // databases such as PostgreSQL fail.
-            $values = array_values(array_filter($values, fn ($v) => (string) $v === (string) (int) $v || ctype_digit($v)));
-        } elseif (\in_array($type, ['ulid', 'uuid', 'guid'])) {
+            $values = array_values(array_filter($values, static fn ($v) => \is_string($v) && ctype_digit($v) || (string) $v === (string) (int) $v));
+        } elseif (null !== $type && (\in_array($type, ['ulid', 'uuid', 'guid']) || (Type::hasType($type) && is_subclass_of(Type::getType($type), AbstractUidType::class)))) {
             $parameterType = class_exists(ArrayParameterType::class) ? ArrayParameterType::STRING : Connection::PARAM_STR_ARRAY;
 
             // Like above, but we just filter out empty strings.
@@ -90,7 +83,7 @@ class ORMQueryBuilderLoader implements EntityLoaderInterface
                     try {
                         $value = $doctrineType->convertToDatabaseValue($value, $platform);
                     } catch (ConversionException $e) {
-                        throw new TransformationFailedException(sprintf('Failed to transform "%s" into "%s".', $value, $type), 0, $e);
+                        throw new TransformationFailedException(\sprintf('Failed to transform "%s" into "%s".', $value, $type), 0, $e);
                     }
                 }
                 unset($value);

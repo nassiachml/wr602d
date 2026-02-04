@@ -1,0 +1,11 @@
+{
+  "name": "wr602d",
+  "private": true,
+  "scripts": {
+    "cy:run": "cypress run",
+    "cy:open": "cypress open"
+  },
+  "devDependencies": {
+    "cypress": "^13.6.0"
+  }
+}

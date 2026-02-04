@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+{% block title %}Paperless Engine — Tout devient PDF{% endblock %}
+{% block body %}
+<div class="hero">
+  <h1>Tout devient PDF</h1>
+  <p class="lead">Un micro-service moderne pour convertir URLs, fichiers et contenu HTML en PDF en un clic. Rapide, fiable, intégré à votre workflow.</p>
+  {% if is_granted('ROLE_USER') %}
+    <div class="cta">
+      <a href="{{ path('app_pdf_generate') }}" class="btn">Générer un PDF</a>
+      <a href="{{ path('app_dashboard') }}" class="btn btn-secondary">Dashboard</a>
+    </div>
+  {% else %}
+    <div class="cta">
+      <a href="{{ path('app_register') }}" class="btn">Créer un compte</a>
+      <a href="{{ path('app_login') }}" class="btn btn-secondary">Se connecter</a>
+    </div>
+  {% endif %}
+</div>
+
+{# Quota au-dessus de "Comment ça marche" (affiché seulement si connecté) #}
+{% if is_granted('ROLE_USER') and app.user.subscription %}
+  <div class="quota-card">
+    <p class="section-tag">Votre quota aujourd'hui</p>
+    {% set used = used_today|default(0) %}
+    {% set max = app.user.subscription.maxPdfsPerDay %}
+    {% set pct = max > 0 ? min(100, (used / max) * 100) : 0 %}
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>{{ used }} PDF généré{{ used > 1 ? 's' : '' }} aujourd'hui</span>
+        <span>{{ max > 0 ? max ~ ' max' : 'Illimité' }}</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar
+          {% if max == 0 or pct == 0 %}progress-bar--safe
+          {% elseif pct >= 100 %}progress-bar--full
+          {% elseif pct >= 80 %}progress-bar--danger
+          {% elseif pct >= 50 %}progress-bar--warn
+          {% else %}progress-bar--safe{% endif %}"
+          style="width: {{ max > 0 ? pct ~ '%' : '0%' }};"></div>
+      </div>
+    </div>
+    <p style="margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--text-muted);">
+      <a href="{{ path('app_pdf_generate') }}">Générer un PDF</a> · <a href="{{ path('app_subscriptions') }}">Changer d'abonnement</a>
+    </p>
+  </div>
+{% endif %}
+
+<p class="section-tag">Comment ça marche</p>
+<h2 class="section-title">Trois façons de générer vos PDF</h2>
+<div class="features">
+  <div class="feature-card">
+    <div class="icon">🔗</div>
+    <h3>URL → PDF</h3>
+    <p>Collez n'importe quelle adresse web et récupérez un PDF fidèle à la page.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">📄</div>
+    <h3>Fichier → PDF</h3>
+    <p>Importez un document HTML ou Office (Word, ODT) et convertissez-le en PDF.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">✏️</div>
+    <h3>WYSIWYG</h3>
+    <p>Saisissez du contenu HTML directement et générez le PDF à la volée.</p>
+  </div>
+</div>
+
+<p class="section-tag">Pourquoi Paperless</p>
+<h2 class="section-title">Simple, rapide, sous votre contrôle</h2>
+<div class="features">
+  <div class="feature-card">
+    <div class="icon">⚡</div>
+    <h3>Gotenberg</h3>
+    <p>Moteur de conversion professionnel (Chromium & LibreOffice) pour des PDF de qualité.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">📊</div>
+    <h3>Quota selon l'abonnement</h3>
+    <p>Free, Premium ou illimité : vous choisissez le volume adapté à vos besoins.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">📬</div>
+    <h3>Envoi par email</h3>
+    <p>Envoyez le PDF généré à vous-même ou à vos contacts en un clic.</p>
+  </div>
+</div>
+{% endblock %}

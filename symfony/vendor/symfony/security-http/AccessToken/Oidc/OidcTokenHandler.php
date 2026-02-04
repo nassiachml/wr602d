@@ -32,8 +32,6 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 
 /**
  * The token handler decodes and validates the token, and retrieves the user identifier from it.
- *
- * @experimental
  */
 final class OidcTokenHandler implements AccessTokenHandlerInterface
 {
@@ -46,7 +44,7 @@ final class OidcTokenHandler implements AccessTokenHandlerInterface
         private array $issuers,
         private string $claim = 'sub',
         private ?LoggerInterface $logger = null,
-        private ClockInterface $clock = new Clock()
+        private ClockInterface $clock = new Clock(),
     ) {
     }
 
@@ -90,11 +88,15 @@ final class OidcTokenHandler implements AccessTokenHandlerInterface
             $claimCheckerManager->check($claims);
 
             if (empty($claims[$this->claim])) {
-                throw new MissingClaimException(sprintf('"%s" claim not found.', $this->claim));
+                throw new MissingClaimException(\sprintf('"%s" claim not found.', $this->claim));
             }
 
             // UserLoader argument can be overridden by a UserProvider on AccessTokenAuthenticator::authenticate
-            return new UserBadge($claims[$this->claim], new FallbackUserLoader(fn () => $this->createUser($claims)), $claims);
+            return new UserBadge($claims[$this->claim], new FallbackUserLoader(function () use ($claims) {
+                $claims['user_identifier'] = $claims[$this->claim];
+
+                return $this->createUser($claims);
+            }), $claims);
         } catch (\Exception $e) {
             $this->logger?->error('An error occurred while decoding and validating the token.', [
                 'error' => $e->getMessage(),

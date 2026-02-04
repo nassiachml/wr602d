@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\Common\DataFixtures;
 
 use BadMethodCallException;
-use Doctrine\Deprecations\Deprecation;
 
 use function assert;
 
@@ -18,15 +17,10 @@ abstract class AbstractFixture implements SharedFixtureInterface
 {
     /**
      * Fixture reference repository
-     *
-     * @var ReferenceRepository|null
      */
-    protected $referenceRepository;
+    protected ReferenceRepository|null $referenceRepository = null;
 
-    /**
-     * {@inheritDoc}
-     */
-    public function setReferenceRepository(ReferenceRepository $referenceRepository)
+    public function setReferenceRepository(ReferenceRepository $referenceRepository): void
     {
         $this->referenceRepository = $referenceRepository;
     }
@@ -46,10 +40,8 @@ abstract class AbstractFixture implements SharedFixtureInterface
      * @see ReferenceRepository::setReference()
      *
      * @param object $object - managed object
-     *
-     * @return void
      */
-    public function setReference(string $name, object $object)
+    public function setReference(string $name, object $object): void
     {
         $this->getReferenceRepository()->setReference($name, $object);
     }
@@ -64,11 +56,9 @@ abstract class AbstractFixture implements SharedFixtureInterface
      *
      * @param object $object - managed object
      *
-     * @return void
-     *
      * @throws BadMethodCallException - if repository already has a reference by $name.
      */
-    public function addReference(string $name, object $object)
+    public function addReference(string $name, object $object): void
     {
         $this->getReferenceRepository()->addReference($name, $object);
     }
@@ -79,24 +69,14 @@ abstract class AbstractFixture implements SharedFixtureInterface
      *
      * @see ReferenceRepository::getReference()
      *
-     * @phpstan-param class-string<T>|null $class
+     * @phpstan-param class-string<T> $class
      *
-     * @return object
-     * @phpstan-return ($class is null ? object : T)
+     * @phpstan-return T
      *
      * @template T of object
      */
-    public function getReference(string $name, ?string $class = null)
+    public function getReference(string $name, string $class): object
     {
-        if ($class === null) {
-            Deprecation::trigger(
-                'doctrine/data-fixtures',
-                'https://github.com/doctrine/data-fixtures/pull/409',
-                'Argument $class of %s() will be mandatory in 2.0.',
-                __METHOD__,
-            );
-        }
-
         return $this->getReferenceRepository()->getReference($name, $class);
     }
 
@@ -106,21 +86,10 @@ abstract class AbstractFixture implements SharedFixtureInterface
      *
      * @see ReferenceRepository::hasReference()
      *
-     * @phpstan-param class-string|null $class
-     *
-     * @return bool
+     * @phpstan-param class-string $class
      */
-    public function hasReference(string $name, ?string $class = null)
+    public function hasReference(string $name, string $class): bool
     {
-        if ($class === null) {
-            Deprecation::trigger(
-                'doctrine/data-fixtures',
-                'https://github.com/doctrine/data-fixtures/pull/409',
-                'Argument $class of %s() will be mandatory in 2.0.',
-                __METHOD__,
-            );
-        }
-
         return $this->getReferenceRepository()->hasReference($name, $class);
     }
 }

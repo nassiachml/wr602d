@@ -45,7 +45,7 @@ class ByteString extends AbstractString
     public static function fromRandom(int $length = 16, ?string $alphabet = null): self
     {
         if ($length <= 0) {
-            throw new InvalidArgumentException(sprintf('A strictly positive length is expected, "%d" given.', $length));
+            throw new InvalidArgumentException(\sprintf('A strictly positive length is expected, "%d" given.', $length));
         }
 
         $alphabet ??= self::ALPHABET_ALPHANUMERIC;
@@ -236,7 +236,7 @@ class ByteString extends AbstractString
             $regexp .= 'i';
         }
 
-        set_error_handler(static function ($t, $m) { throw new InvalidArgumentException($m); });
+        set_error_handler(static fn ($t, $m) => throw new InvalidArgumentException($m));
 
         try {
             if (false === $match($regexp, $this->string, $matches, $flags | \PREG_UNMATCHED_AS_NULL, $offset)) {
@@ -300,7 +300,7 @@ class ByteString extends AbstractString
 
         $replace = \is_array($to) || $to instanceof \Closure ? 'preg_replace_callback' : 'preg_replace';
 
-        set_error_handler(static function ($t, $m) { throw new InvalidArgumentException($m); });
+        set_error_handler(static fn ($t, $m) => throw new InvalidArgumentException($m));
 
         try {
             if (null === $string = $replace($fromRegexp, $to, $this->string)) {
@@ -417,7 +417,7 @@ class ByteString extends AbstractString
             return $u;
         }
 
-        set_error_handler(static function ($t, $m) { throw new InvalidArgumentException($m); });
+        set_error_handler(static fn ($t, $m) => throw new InvalidArgumentException($m));
 
         try {
             try {
@@ -436,7 +436,7 @@ class ByteString extends AbstractString
         }
 
         if (!$validEncoding) {
-            throw new InvalidArgumentException(sprintf('Invalid "%s" string.', $fromEncoding ?? 'Windows-1252'));
+            throw new InvalidArgumentException(\sprintf('Invalid "%s" string.', $fromEncoding ?? 'Windows-1252'));
         }
 
         $u->string = mb_convert_encoding($this->string, 'UTF-8', $fromEncoding ?? 'Windows-1252');

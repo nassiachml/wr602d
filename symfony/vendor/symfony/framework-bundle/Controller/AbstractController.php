@@ -44,7 +44,6 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\WebLink\EventListener\AddLinkHeaderListener;
 use Symfony\Component\WebLink\GenericLinkProvider;
 use Symfony\Component\WebLink\HttpHeaderSerializer;
-use Symfony\Component\WebLink\Link;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 use Twig\Environment;
@@ -64,7 +63,7 @@ abstract class AbstractController implements ServiceSubscriberInterface
     #[Required]
     public function setContainer(ContainerInterface $container): ?ContainerInterface
     {
-        $previous = $this->container;
+        $previous = $this->container ?? null;
         $this->container = $container;
 
         return $previous;
@@ -76,7 +75,7 @@ abstract class AbstractController implements ServiceSubscriberInterface
     protected function getParameter(string $name): array|bool|string|int|float|\UnitEnum|null
     {
         if (!$this->container->has('parameter_bag')) {
-            throw new ServiceNotFoundException('parameter_bag.', null, null, [], sprintf('The "%s::getParameter()" method is missing a parameter bag to work properly. Did you forget to register your controller as a service subscriber? This can be fixed either by using autoconfiguration or by manually wiring a "parameter_bag" in the service locator passed to the controller.', static::class));
+            throw new ServiceNotFoundException('parameter_bag.', null, null, [], \sprintf('The "%s::getParameter()" method is missing a parameter bag to work properly. Did you forget to register your controller as a service subscriber? This can be fixed either by using autoconfiguration or by manually wiring a "parameter_bag" in the service locator passed to the controller.', static::class));
         }
 
         return $this->container->get('parameter_bag')->get($name);
@@ -158,6 +157,10 @@ abstract class AbstractController implements ServiceSubscriberInterface
             return new JsonResponse($json, $status, $headers, true);
         }
 
+        if (null === $data) {
+            return new JsonResponse('null', $status, $headers, true);
+        }
+
         return new JsonResponse($data, $status, $headers);
     }
 
@@ -230,17 +233,17 @@ abstract class AbstractController implements ServiceSubscriberInterface
      */
     protected function renderView(string $view, array $parameters = []): string
     {
-        if (!$this->container->has('twig')) {
-            throw new \LogicException('You cannot use the "renderView" method if the Twig Bundle is not available. Try running "composer require symfony/twig-bundle".');
-        }
+        return $this->doRenderView($view, null, $parameters, __FUNCTION__);
+    }
 
-        foreach ($parameters as $k => $v) {
-            if ($v instanceof FormInterface) {
-                $parameters[$k] = $v->createView();
-            }
-        }
-
-        return $this->container->get('twig')->render($view, $parameters);
+    /**
+     * Returns a rendered block from a view.
+     *
+     * Forms found in parameters are auto-cast to form views.
+     */
+    protected function renderBlockView(string $view, string $block, array $parameters = []): string
+    {
+        return $this->doRenderView($view, $block, $parameters, __FUNCTION__);
     }
 
     /**
@@ -251,21 +254,18 @@ abstract class AbstractController implements ServiceSubscriberInterface
      */
     protected function render(string $view, array $parameters = [], ?Response $response = null): Response
     {
-        $content = $this->renderView($view, $parameters);
-        $response ??= new Response();
+        return $this->doRender($view, null, $parameters, $response, __FUNCTION__);
+    }
 
-        if (200 === $response->getStatusCode()) {
-            foreach ($parameters as $v) {
-                if ($v instanceof FormInterface && $v->isSubmitted() && !$v->isValid()) {
-                    $response->setStatusCode(422);
-                    break;
-                }
-            }
-        }
-
-        $response->setContent($content);
-
-        return $response;
+    /**
+     * Renders a block in a view.
+     *
+     * If an invalid form is found in the list of parameters, a 422 status code is returned.
+     * Forms found in parameters are auto-cast to form views.
+     */
+    protected function renderBlock(string $view, string $block, array $parameters = [], ?Response $response = null): Response
+    {
+        return $this->doRender($view, $block, $parameters, $response, __FUNCTION__);
     }
 
     /**
@@ -429,6 +429,44 @@ abstract class AbstractController implements ServiceSubscriberInterface
 
         $response->headers->set('Link', $this->container->get('web_link.http_header_serializer')->serialize($populatedLinks), false);
         $response->sendHeaders(103);
+
+        return $response;
+    }
+
+    private function doRenderView(string $view, ?string $block, array $parameters, string $method): string
+    {
+        if (!$this->container->has('twig')) {
+            throw new \LogicException(\sprintf('You cannot use the "%s" method if the Twig Bundle is not available. Try running "composer require symfony/twig-bundle".', $method));
+        }
+
+        foreach ($parameters as $k => $v) {
+            if ($v instanceof FormInterface) {
+                $parameters[$k] = $v->createView();
+            }
+        }
+
+        if (null !== $block) {
+            return $this->container->get('twig')->load($view)->renderBlock($block, $parameters);
+        }
+
+        return $this->container->get('twig')->render($view, $parameters);
+    }
+
+    private function doRender(string $view, ?string $block, array $parameters, ?Response $response, string $method): Response
+    {
+        $content = $this->doRenderView($view, $block, $parameters, $method);
+        $response ??= new Response();
+
+        if (200 === $response->getStatusCode()) {
+            foreach ($parameters as $v) {
+                if ($v instanceof FormInterface && $v->isSubmitted() && !$v->isValid()) {
+                    $response->setStatusCode(422);
+                    break;
+                }
+            }
+        }
+
+        $response->setContent($content);
 
         return $response;
     }

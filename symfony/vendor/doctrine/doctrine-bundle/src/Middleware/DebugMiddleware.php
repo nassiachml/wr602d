@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Bundle\DoctrineBundle\Middleware;
 
 use Doctrine\DBAL\Driver as DriverInterface;
@@ -10,14 +12,12 @@ use Symfony\Component\Stopwatch\Stopwatch;
 
 class DebugMiddleware implements Middleware, ConnectionNameAwareInterface
 {
-    private DebugDataHolder $debugDataHolder;
-    private ?Stopwatch $stopwatch;
     private string $connectionName = 'default';
 
-    public function __construct(DebugDataHolder $debugDataHolder, ?Stopwatch $stopwatch)
-    {
-        $this->debugDataHolder = $debugDataHolder;
-        $this->stopwatch       = $stopwatch;
+    public function __construct(
+        private readonly DebugDataHolder $debugDataHolder,
+        private readonly Stopwatch|null $stopwatch,
+    ) {
     }
 
     public function setConnectionName(string $name): void

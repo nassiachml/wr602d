@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+6.4
+---
+
+ * `UserValueResolver` no longer implements `ArgumentValueResolverInterface`
+ * Deprecate calling the constructor of `DefaultLoginRateLimiter` with an empty secret
+
 6.3
 ---
 

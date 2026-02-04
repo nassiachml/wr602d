@@ -13,8 +13,6 @@ interface FixtureInterface
 {
     /**
      * Load data fixtures with the passed EntityManager
-     *
-     * @return void
      */
-    public function load(ObjectManager $manager);
+    public function load(ObjectManager $manager): void;
 }

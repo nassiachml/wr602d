@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ contact.id ? 'Modifier' : 'Nouveau' }} contact - Paperless Engine{% endblock %}
+{% block body %}
+<h1>{{ contact.id ? 'Modifier le contact' : 'Nouveau contact' }}</h1>
+<form method="post" action="{{ contact.id ? path('app_contact_edit', { id: contact.id }) : path('app_contact_new') }}">
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ contact.email }}" required>
+    </div>
+    <div class="form-group">
+        <label for="name">Nom</label>
+        <input type="text" id="name" name="name" value="{{ contact.name ?? '' }}">
+    </div>
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+<p><a href="{{ path('app_contacts') }}">Retour aux contacts</a></p>
+{% endblock %}

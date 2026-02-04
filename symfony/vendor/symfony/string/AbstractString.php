@@ -263,7 +263,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
     public function endsWith(string|iterable $suffix): bool
     {
         if (\is_string($suffix)) {
-            throw new \TypeError(sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
+            throw new \TypeError(\sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
         }
 
         foreach ($suffix as $s) {
@@ -312,7 +312,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
     public function equalsTo(string|iterable $string): bool
     {
         if (\is_string($string)) {
-            throw new \TypeError(sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
+            throw new \TypeError(\sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
         }
 
         foreach ($string as $s) {
@@ -340,7 +340,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
     public function indexOf(string|iterable $needle, int $offset = 0): ?int
     {
         if (\is_string($needle)) {
-            throw new \TypeError(sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
+            throw new \TypeError(\sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
         }
 
         $i = \PHP_INT_MAX;
@@ -362,7 +362,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
     public function indexOfLast(string|iterable $needle, int $offset = 0): ?int
     {
         if (\is_string($needle)) {
-            throw new \TypeError(sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
+            throw new \TypeError(\sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
         }
 
         $i = null;
@@ -414,7 +414,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
     public function repeat(int $multiplier): static
     {
         if (0 > $multiplier) {
-            throw new InvalidArgumentException(sprintf('Multiplier must be positive, %d given.', $multiplier));
+            throw new InvalidArgumentException(\sprintf('Multiplier must be positive, %d given.', $multiplier));
         }
 
         $str = clone $this;
@@ -448,7 +448,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
             $delimiter .= 'i';
         }
 
-        set_error_handler(static function ($t, $m) { throw new InvalidArgumentException($m); });
+        set_error_handler(static fn ($t, $m) => throw new InvalidArgumentException($m));
 
         try {
             if (false === $chunks = preg_split($delimiter, $this->string, $limit, $flags)) {
@@ -481,7 +481,7 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
     public function startsWith(string|iterable $prefix): bool
     {
         if (\is_string($prefix)) {
-            throw new \TypeError(sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
+            throw new \TypeError(\sprintf('Method "%s()" must be overridden by class "%s" to deal with non-iterable values.', __FUNCTION__, static::class));
         }
 
         foreach ($prefix as $prefix) {
@@ -507,23 +507,14 @@ abstract class AbstractString implements \Stringable, \JsonSerializable
             return $b;
         }
 
-        set_error_handler(static function ($t, $m) { throw new InvalidArgumentException($m); });
-
         try {
-            try {
-                $b->string = mb_convert_encoding($this->string, $toEncoding, 'UTF-8');
-            } catch (InvalidArgumentException|\ValueError $e) {
-                if (!\function_exists('iconv')) {
-                    if ($e instanceof \ValueError) {
-                        throw new InvalidArgumentException($e->getMessage(), $e->getCode(), $e);
-                    }
-                    throw $e;
-                }
-
-                $b->string = iconv('UTF-8', $toEncoding, $this->string);
+            $b->string = mb_convert_encoding($this->string, $toEncoding, 'UTF-8');
+        } catch (\ValueError $e) {
+            if (!\function_exists('iconv')) {
+                throw new InvalidArgumentException($e->getMessage(), $e->getCode(), $e);
             }
-        } finally {
-            restore_error_handler();
+
+            $b->string = iconv('UTF-8', $toEncoding, $this->string);
         }
 
         return $b;

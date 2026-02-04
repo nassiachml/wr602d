@@ -38,6 +38,7 @@ class Regex extends Constraint
     public $pattern;
     public $htmlPattern;
     public $match = true;
+    /** @var callable|null */
     public $normalizer;
 
     public function __construct(
@@ -48,7 +49,7 @@ class Regex extends Constraint
         ?callable $normalizer = null,
         ?array $groups = null,
         mixed $payload = null,
-        array $options = []
+        array $options = [],
     ) {
         if (\is_array($pattern)) {
             $options = array_merge($pattern, $options);
@@ -64,7 +65,7 @@ class Regex extends Constraint
         $this->normalizer = $normalizer ?? $this->normalizer;
 
         if (null !== $this->normalizer && !\is_callable($this->normalizer)) {
-            throw new InvalidArgumentException(sprintf('The "normalizer" option must be a valid callable ("%s" given).', get_debug_type($this->normalizer)));
+            throw new InvalidArgumentException(\sprintf('The "normalizer" option must be a valid callable ("%s" given).', get_debug_type($this->normalizer)));
         }
     }
 

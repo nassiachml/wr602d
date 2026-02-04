@@ -40,27 +40,30 @@ use Symfony\Component\Security\Core\Exception\TokenNotFoundException;
  *         `class`    varchar(100) NOT NULL,
  *         `username` varchar(200) NOT NULL
  *     );
+ *
+ * @final since Symfony 6.4
  */
 class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifierInterface
 {
-    private Connection $conn;
-
-    public function __construct(Connection $conn)
-    {
-        $this->conn = $conn;
+    public function __construct(
+        private readonly Connection $conn,
+    ) {
     }
 
     public function loadTokenBySeries(string $series): PersistentTokenInterface
     {
-        // the alias for lastUsed works around case insensitivity in PostgreSQL
-        $sql = 'SELECT class, username, value, lastUsed AS last_used FROM rememberme_token WHERE series=:series';
+        $sql = 'SELECT class, username, value, lastUsed FROM rememberme_token WHERE series=:series';
         $paramValues = ['series' => $series];
         $paramTypes = ['series' => ParameterType::STRING];
         $stmt = $this->conn->executeQuery($sql, $paramValues, $paramTypes);
-        $row = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchAssociative() : $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        // fetching numeric because column name casing depends on platform, eg. Oracle converts all not quoted names to uppercase
+        $row = $stmt instanceof Result || $stmt instanceof DriverResult ? $stmt->fetchNumeric() : $stmt->fetch(\PDO::FETCH_NUM);
 
         if ($row) {
-            return new PersistentToken($row['class'], $row['username'], $series, $row['value'], new \DateTime($row['last_used']));
+            [$class, $username, $value, $last_used] = $row;
+
+            return new PersistentToken($class, $username, $series, $value, new \DateTimeImmutable($last_used));
         }
 
         throw new TokenNotFoundException('No token found.');
@@ -74,34 +77,23 @@ class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifierInte
         $sql = 'DELETE FROM rememberme_token WHERE series=:series';
         $paramValues = ['series' => $series];
         $paramTypes = ['series' => ParameterType::STRING];
-        if (method_exists($this->conn, 'executeStatement')) {
-            $this->conn->executeStatement($sql, $paramValues, $paramTypes);
-        } else {
-            $this->conn->executeUpdate($sql, $paramValues, $paramTypes);
-        }
+        $this->conn->executeStatement($sql, $paramValues, $paramTypes);
     }
 
-    /**
-     * @return void
-     */
-    public function updateToken(string $series, #[\SensitiveParameter] string $tokenValue, \DateTime $lastUsed)
+    public function updateToken(string $series, #[\SensitiveParameter] string $tokenValue, \DateTimeInterface $lastUsed): void
     {
         $sql = 'UPDATE rememberme_token SET value=:value, lastUsed=:lastUsed WHERE series=:series';
         $paramValues = [
             'value' => $tokenValue,
-            'lastUsed' => $lastUsed,
+            'lastUsed' => \DateTimeImmutable::createFromInterface($lastUsed),
             'series' => $series,
         ];
         $paramTypes = [
             'value' => ParameterType::STRING,
-            'lastUsed' => Types::DATETIME_MUTABLE,
+            'lastUsed' => Types::DATETIME_IMMUTABLE,
             'series' => ParameterType::STRING,
         ];
-        if (method_exists($this->conn, 'executeStatement')) {
-            $updated = $this->conn->executeStatement($sql, $paramValues, $paramTypes);
-        } else {
-            $updated = $this->conn->executeUpdate($sql, $paramValues, $paramTypes);
-        }
+        $updated = $this->conn->executeStatement($sql, $paramValues, $paramTypes);
         if ($updated < 1) {
             throw new TokenNotFoundException('No token found.');
         }
@@ -118,20 +110,16 @@ class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifierInte
             'username' => $token->getUserIdentifier(),
             'series' => $token->getSeries(),
             'value' => $token->getTokenValue(),
-            'lastUsed' => $token->getLastUsed(),
+            'lastUsed' => \DateTimeImmutable::createFromInterface($token->getLastUsed()),
         ];
         $paramTypes = [
             'class' => ParameterType::STRING,
             'username' => ParameterType::STRING,
             'series' => ParameterType::STRING,
             'value' => ParameterType::STRING,
-            'lastUsed' => Types::DATETIME_MUTABLE,
+            'lastUsed' => Types::DATETIME_IMMUTABLE,
         ];
-        if (method_exists($this->conn, 'executeStatement')) {
-            $this->conn->executeStatement($sql, $paramValues, $paramTypes);
-        } else {
-            $this->conn->executeUpdate($sql, $paramValues, $paramTypes);
-        }
+        $this->conn->executeStatement($sql, $paramValues, $paramTypes);
     }
 
     public function verifyToken(PersistentTokenInterface $token, #[\SensitiveParameter] string $tokenValue): bool
@@ -186,6 +174,7 @@ class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifierInte
         $this->conn->beginTransaction();
         try {
             $this->deleteTokenBySeries($tmpSeries);
+            $lastUsed = \DateTime::createFromInterface($lastUsed);
             $this->createNewToken(new PersistentToken($token->getClass(), $token->getUserIdentifier(), $tmpSeries, $token->getTokenValue(), $lastUsed));
 
             $this->conn->commit();
@@ -220,7 +209,7 @@ class DoctrineTokenProvider implements TokenProviderInterface, TokenVerifierInte
         $table = $schema->createTable('rememberme_token');
         $table->addColumn('series', Types::STRING, ['length' => 88]);
         $table->addColumn('value', Types::STRING, ['length' => 88]);
-        $table->addColumn('lastUsed', Types::DATETIME_MUTABLE);
+        $table->addColumn('lastUsed', Types::DATETIME_IMMUTABLE);
         $table->addColumn('class', Types::STRING, ['length' => 100]);
         $table->addColumn('username', Types::STRING, ['length' => 200]);
         $table->setPrimaryKey(['series']);

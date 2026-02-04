@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+{% block title %}Inscription - Paperless Engine{% endblock %}
+{% block body %}
+<h1>Inscription</h1>
+<form method="post" action="{{ path('app_register') }}">
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+    </div>
+    <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <div class="form-group">
+        <label for="subscription">Abonnement</label>
+        <select id="subscription" name="subscription" required>
+            {% for sub in subscriptions %}
+                <option value="{{ sub.id }}">{{ sub.name }} - {{ sub.description }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn">S'inscrire</button>
+</form>
+<p><a href="{{ path('app_login') }}">Déjà un compte ?</a></p>
+{% endblock %}

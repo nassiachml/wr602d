@@ -30,7 +30,6 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class RegisterEventListenersAndSubscribersPass implements CompilerPassInterface
 {
-    private string $connectionsParameter;
     private array $connections;
 
     /**
@@ -38,21 +37,21 @@ class RegisterEventListenersAndSubscribersPass implements CompilerPassInterface
      */
     private array $eventManagers = [];
 
-    private string $managerTemplate;
-    private string $tagPrefix;
-
     /**
      * @param string $managerTemplate sprintf() template for generating the event
      *                                manager's service ID for a connection name
      * @param string $tagPrefix       Tag prefix for listeners and subscribers
      */
-    public function __construct(string $connectionsParameter, string $managerTemplate, string $tagPrefix)
-    {
-        $this->connectionsParameter = $connectionsParameter;
-        $this->managerTemplate = $managerTemplate;
-        $this->tagPrefix = $tagPrefix;
+    public function __construct(
+        private readonly string $connectionsParameter,
+        private readonly string $managerTemplate,
+        private readonly string $tagPrefix,
+    ) {
     }
 
+    /**
+     * @return void
+     */
     public function process(ContainerBuilder $container)
     {
         if (!$container->hasParameter($this->connectionsParameter)) {
@@ -84,11 +83,11 @@ class RegisterEventListenersAndSubscribersPass implements CompilerPassInterface
                 ? [$container->getParameterBag()->resolveValue($tag['connection'])]
                 : array_keys($this->connections);
             if ($listenerTag === $tagName && !isset($tag['event'])) {
-                throw new InvalidArgumentException(sprintf('Doctrine event listener "%s" must specify the "event" attribute.', $id));
+                throw new InvalidArgumentException(\sprintf('Doctrine event listener "%s" must specify the "event" attribute.', $id));
             }
             foreach ($connections as $con) {
                 if (!isset($this->connections[$con])) {
-                    throw new RuntimeException(sprintf('The Doctrine connection "%s" referenced in service "%s" does not exist. Available connections names: "%s".', $con, $id, implode('", "', array_keys($this->connections))));
+                    throw new RuntimeException(\sprintf('The Doctrine connection "%s" referenced in service "%s" does not exist. Available connections names: "%s".', $con, $id, implode('", "', array_keys($this->connections))));
                 }
 
                 if (!isset($managerDefs[$con])) {
@@ -128,7 +127,7 @@ class RegisterEventListenersAndSubscribersPass implements CompilerPassInterface
     private function getEventManagerDef(ContainerBuilder $container, string $name): Definition
     {
         if (!isset($this->eventManagers[$name])) {
-            $this->eventManagers[$name] = $container->getDefinition(sprintf($this->managerTemplate, $name));
+            $this->eventManagers[$name] = $container->getDefinition(\sprintf($this->managerTemplate, $name));
         }
 
         return $this->eventManagers[$name];

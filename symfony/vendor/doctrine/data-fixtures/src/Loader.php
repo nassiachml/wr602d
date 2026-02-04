@@ -20,7 +20,6 @@ use function asort;
 use function class_exists;
 use function class_implements;
 use function count;
-use function get_class;
 use function get_declared_classes;
 use function implode;
 use function in_array;
@@ -73,7 +72,7 @@ class Loader
      *
      * @return array $fixtures Array of loaded fixture object instances.
      */
-    public function loadFromDirectory(string $dir)
+    public function loadFromDirectory(string $dir): array
     {
         if (! is_dir($dir)) {
             throw new InvalidArgumentException(sprintf('"%s" does not exist', $dir));
@@ -94,7 +93,7 @@ class Loader
      *
      * @return array $fixtures Array of loaded fixture object instances.
      */
-    public function loadFromFile(string $fileName)
+    public function loadFromFile(string $fileName): array
     {
         if (! is_readable($fileName)) {
             throw new InvalidArgumentException(sprintf('"%s" does not exist or is not readable', $fileName));
@@ -107,20 +106,16 @@ class Loader
 
     /**
      * Has fixture?
-     *
-     * @return bool
      */
-    public function hasFixture(FixtureInterface $fixture)
+    public function hasFixture(FixtureInterface $fixture): bool
     {
-        return isset($this->fixtures[get_class($fixture)]);
+        return isset($this->fixtures[$fixture::class]);
     }
 
     /**
      * Get a specific fixture instance
-     *
-     * @return FixtureInterface
      */
-    public function getFixture(string $className)
+    public function getFixture(string $className): FixtureInterface
     {
         if (! isset($this->fixtures[$className])) {
             throw new InvalidArgumentException(sprintf(
@@ -135,9 +130,9 @@ class Loader
     /**
      * Add a fixture object instance to the loader.
      */
-    public function addFixture(FixtureInterface $fixture)
+    public function addFixture(FixtureInterface $fixture): void
     {
-        $fixtureClass = get_class($fixture);
+        $fixtureClass = $fixture::class;
 
         if (isset($this->fixtures[$fixtureClass])) {
             return;
@@ -146,7 +141,7 @@ class Loader
         if ($fixture instanceof OrderedFixtureInterface && $fixture instanceof DependentFixtureInterface) {
             throw new InvalidArgumentException(sprintf(
                 'Class "%s" can\'t implement "%s" and "%s" at the same time.',
-                get_class($fixture),
+                $fixture::class,
                 'OrderedFixtureInterface',
                 'DependentFixtureInterface',
             ));
@@ -197,10 +192,8 @@ class Loader
      * class.
      *
      * @phpstan-param class-string<object> $className
-     *
-     * @return bool
      */
-    public function isTransient(string $className)
+    public function isTransient(string $className): bool
     {
         $rc = new ReflectionClass($className);
         if ($rc->isAbstract()) {
@@ -214,10 +207,8 @@ class Loader
 
     /**
      * Creates the fixture object from the class.
-     *
-     * @return FixtureInterface
      */
-    protected function createFixture(string $class)
+    protected function createFixture(string $class): FixtureInterface
     {
         return new $class();
     }
@@ -253,10 +244,8 @@ class Loader
 
     /**
      * Orders fixtures by dependencies
-     *
-     * @return void
      */
-    private function orderFixturesByDependencies()
+    private function orderFixturesByDependencies(): void
     {
         /** @phpstan-var array<class-string<DependentFixtureInterface>, int> */
         $sequenceForClasses = [];
@@ -281,7 +270,7 @@ class Loader
 
         // First we determine which classes has dependencies and which don't
         foreach ($this->fixtures as $fixture) {
-            $fixtureClass = get_class($fixture);
+            $fixtureClass = $fixture::class;
 
             if ($fixture instanceof OrderedFixtureInterface) {
                 continue;
@@ -382,7 +371,7 @@ class Loader
      *
      * @phpstan-return array<class-string<FixtureInterface>>
      */
-    private function getUnsequencedClasses(array $sequences, ?iterable $classes = null): array
+    private function getUnsequencedClasses(array $sequences, iterable|null $classes = null): array
     {
         $unsequencedClasses = [];
 

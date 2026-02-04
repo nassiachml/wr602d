@@ -12,7 +12,6 @@
 namespace Symfony\Bundle\SecurityBundle\DependencyInjection\Security\AccessToken;
 
 use Jose\Component\Core\Algorithm;
-use Jose\Component\Core\JWK;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -21,8 +20,6 @@ use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Configures a token handler for decoding and validating an OIDC token.
- *
- * @experimental
  */
 class OidcTokenHandlerFactory implements TokenHandlerFactoryInterface
 {

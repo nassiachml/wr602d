@@ -34,22 +34,31 @@ class UnicodeString extends AbstractUnicodeString
 {
     public function __construct(string $string = '')
     {
-        $this->string = normalizer_is_normalized($string) ? $string : normalizer_normalize($string);
+        if ('' === $string || normalizer_is_normalized($this->string = $string)) {
+            return;
+        }
 
-        if (false === $this->string) {
+        if (false === $string = normalizer_normalize($string)) {
             throw new InvalidArgumentException('Invalid UTF-8 string.');
         }
+
+        $this->string = $string;
     }
 
     public function append(string ...$suffix): static
     {
         $str = clone $this;
         $str->string = $this->string.(1 >= \count($suffix) ? ($suffix[0] ?? '') : implode('', $suffix));
-        normalizer_is_normalized($str->string) ?: $str->string = normalizer_normalize($str->string);
 
-        if (false === $str->string) {
+        if (normalizer_is_normalized($str->string)) {
+            return $str;
+        }
+
+        if (false === $string = normalizer_normalize($str->string)) {
             throw new InvalidArgumentException('Invalid UTF-8 string.');
         }
+
+        $str->string = $string;
 
         return $str;
     }
@@ -209,11 +218,16 @@ class UnicodeString extends AbstractUnicodeString
     {
         $str = clone $this;
         $str->string = (1 >= \count($prefix) ? ($prefix[0] ?? '') : implode('', $prefix)).$this->string;
-        normalizer_is_normalized($str->string) ?: $str->string = normalizer_normalize($str->string);
 
-        if (false === $str->string) {
+        if (normalizer_is_normalized($str->string)) {
+            return $str;
+        }
+
+        if (false === $string = normalizer_normalize($str->string)) {
             throw new InvalidArgumentException('Invalid UTF-8 string.');
         }
+
+        $str->string = $string;
 
         return $str;
     }
@@ -235,11 +249,16 @@ class UnicodeString extends AbstractUnicodeString
             }
 
             $str->string = $result.$tail;
-            normalizer_is_normalized($str->string) ?: $str->string = normalizer_normalize($str->string);
 
-            if (false === $str->string) {
+            if (normalizer_is_normalized($str->string)) {
+                return $str;
+            }
+
+            if (false === $string = normalizer_normalize($str->string)) {
                 throw new InvalidArgumentException('Invalid UTF-8 string.');
             }
+
+            $str->string = $string;
         }
 
         return $str;
@@ -269,11 +288,16 @@ class UnicodeString extends AbstractUnicodeString
         $start = $start ? \strlen(grapheme_substr($this->string, 0, $start)) : 0;
         $length = $length ? \strlen(grapheme_substr($this->string, $start, $length ?? 2147483647)) : $length;
         $str->string = substr_replace($this->string, $replacement, $start, $length ?? 2147483647);
-        normalizer_is_normalized($str->string) ?: $str->string = normalizer_normalize($str->string);
 
-        if (false === $str->string) {
+        if (normalizer_is_normalized($str->string)) {
+            return $str;
+        }
+
+        if (false === $string = normalizer_normalize($str->string)) {
             throw new InvalidArgumentException('Invalid UTF-8 string.');
         }
+
+        $str->string = $string;
 
         return $str;
     }
@@ -338,6 +362,47 @@ class UnicodeString extends AbstractUnicodeString
         return $prefix === grapheme_extract($this->string, \strlen($prefix), \GRAPHEME_EXTR_MAXBYTES);
     }
 
+    public function trimPrefix($prefix): static
+    {
+        if (\is_array($prefix) || $prefix instanceof \Traversable) {
+            return parent::trimPrefix($prefix);
+        }
+
+        if ($prefix instanceof AbstractString) {
+            $prefix = $prefix->string;
+        } else {
+            $prefix = (string) $prefix;
+        }
+
+        if (!normalizer_is_normalized($prefix, \Normalizer::NFC)) {
+            $prefix = normalizer_normalize($prefix, \Normalizer::NFC);
+        }
+
+        return parent::trimPrefix($prefix);
+    }
+
+    public function trimSuffix($suffix): static
+    {
+        if (\is_array($suffix) || $suffix instanceof \Traversable) {
+            return parent::trimSuffix($suffix);
+        }
+
+        if ($suffix instanceof AbstractString) {
+            $suffix = $suffix->string;
+        } else {
+            $suffix = (string) $suffix;
+        }
+
+        if (!normalizer_is_normalized($suffix, \Normalizer::NFC)) {
+            $suffix = normalizer_normalize($suffix, \Normalizer::NFC);
+        }
+
+        return parent::trimSuffix($suffix);
+    }
+
+    /**
+     * @return void
+     */
     public function __wakeup()
     {
         if (!\is_string($this->string)) {

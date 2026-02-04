@@ -69,7 +69,7 @@ class ArrayChoiceList implements ChoiceListInterface
 
         if (null !== $value) {
             // If a deterministic value generator was passed, use it later
-            $this->valueCallback = $value;
+            $this->valueCallback = $value(...);
         } else {
             // Otherwise generate incrementing integers as values
             $value = static function () {
@@ -114,7 +114,7 @@ class ArrayChoiceList implements ChoiceListInterface
         $choices = [];
 
         foreach ($values as $i => $givenValue) {
-            if (\array_key_exists($givenValue, $this->choices)) {
+            if (\array_key_exists($givenValue ?? '', $this->choices)) {
                 $choices[$i] = $this->choices[$givenValue];
             }
         }

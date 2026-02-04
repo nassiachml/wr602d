@@ -118,6 +118,7 @@ final class AmpHttpClient implements HttpClientInterface, LoggerAwareInterface, 
         }
 
         $request = new Request(implode('', $url), $method);
+        $request->setBodySizeLimit(0);
 
         if ($options['http_version']) {
             $request->setProtocolVersions(match ((float) $options['http_version']) {
@@ -132,9 +133,9 @@ final class AmpHttpClient implements HttpClientInterface, LoggerAwareInterface, 
             $request->addHeader($h[0], $h[1]);
         }
 
-        $request->setTcpConnectTimeout(1000 * $options['timeout']);
-        $request->setTlsHandshakeTimeout(1000 * $options['timeout']);
-        $request->setTransferTimeout(1000 * $options['max_duration']);
+        $request->setTcpConnectTimeout(ceil(1000 * $options['timeout']));
+        $request->setTlsHandshakeTimeout(ceil(1000 * $options['timeout']));
+        $request->setTransferTimeout(ceil(1000 * $options['max_duration']));
         if (method_exists($request, 'setInactivityTimeout')) {
             $request->setInactivityTimeout(0);
         }
@@ -165,7 +166,7 @@ final class AmpHttpClient implements HttpClientInterface, LoggerAwareInterface, 
             foreach ($pushedResponses as [$pushedUrl, $pushDeferred]) {
                 $pushDeferred->fail(new CancelledException());
 
-                $this->logger?->debug(sprintf('Unused pushed response: "%s"', $pushedUrl));
+                $this->logger?->debug(\sprintf('Unused pushed response: "%s"', $pushedUrl));
             }
         }
 

@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+{% block title %}Changer d'abonnement - Paperless Engine{% endblock %}
+{% block body %}
+<h1>Changer d'abonnement</h1>
+<form method="post" action="{{ path('app_subscription_change') }}">
+    <div class="form-group">
+        <label>Choisir une offre</label>
+        <select name="subscription" required>
+            {% for sub in subscriptions %}
+                <option value="{{ sub.id }}" {{ current and current.id == sub.id ? 'selected' : '' }}>
+                    {{ sub.name }} — {{ sub.description }} — {{ sub.price }} €
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+<p><a href="{{ path('app_subscriptions') }}">Retour</a></p>
+{% endblock %}

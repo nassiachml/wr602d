@@ -115,6 +115,12 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
                     case '\DateTime':
                         return new TypeGuess(DateType::class, [], Guess::MEDIUM_CONFIDENCE);
 
+                    case \DateTimeImmutable::class:
+                    case '\DateTimeImmutable':
+                    case \DateTimeInterface::class:
+                    case '\DateTimeInterface':
+                        return new TypeGuess(DateType::class, ['input' => 'datetime_immutable'], Guess::MEDIUM_CONFIDENCE);
+
                     case 'string':
                         return new TypeGuess(TextType::class, [], Guess::LOW_CONFIDENCE);
                 }
@@ -226,7 +232,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
         switch ($constraint::class) {
             case Length::class:
                 if (is_numeric($constraint->min)) {
-                    return new ValueGuess(sprintf('.{%s,}', (string) $constraint->min), Guess::LOW_CONFIDENCE);
+                    return new ValueGuess(\sprintf('.{%s,}', (string) $constraint->min), Guess::LOW_CONFIDENCE);
                 }
                 break;
 
@@ -240,7 +246,7 @@ class ValidatorTypeGuesser implements FormTypeGuesserInterface
 
             case Range::class:
                 if (is_numeric($constraint->min)) {
-                    return new ValueGuess(sprintf('.{%s,}', \strlen((string) $constraint->min)), Guess::LOW_CONFIDENCE);
+                    return new ValueGuess(\sprintf('.{%s,}', \strlen((string) $constraint->min)), Guess::LOW_CONFIDENCE);
                 }
                 break;
 

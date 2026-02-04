@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+{% block title %}Supprimer le contact - Paperless Engine{% endblock %}
+{% block body %}
+<h1>Supprimer le contact</h1>
+<p>Supprimer {{ contact.name ?? contact.email }} ?</p>
+<form method="post" action="{{ path('app_contact_delete', { id: contact.id }) }}">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ contact.id) }}">
+    <button type="submit" class="btn">Confirmer la suppression</button>
+</form>
+<p><a href="{{ path('app_contacts') }}">Annuler</a></p>
+{% endblock %}

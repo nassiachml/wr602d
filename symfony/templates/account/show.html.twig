@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+{% block title %}Mon compte - Paperless Engine{% endblock %}
+{% block body %}
+<h1>Mon compte</h1>
+<form method="post" action="{{ path('app_account') }}" enctype="multipart/form-data">
+    <input type="hidden" name="_token" value="{{ csrf_token('account') }}">
+    <div class="form-group">
+        <label for="display_name">Nom d'affichage</label>
+        <input type="text" id="display_name" name="display_name" value="{{ app.user.displayName ?? '' }}">
+    </div>
+    <div class="form-group">
+        <label for="avatar">Avatar</label>
+        <input type="file" id="avatar" name="avatar" accept="image/*">
+        <p class="avatar-preview-wrap">
+            {% set initial = (app.user.displayName ?? app.user.email)|slice(0, 1)|upper %}
+            {% if app.user.avatarFilename %}
+                <img src="{{ url('app_account_avatar', { v: app.user.avatarFilename }) }}" alt="Avatar" class="avatar-preview" id="avatar-preview">
+            {% else %}
+                <span class="avatar-preview avatar-preview--initial" id="avatar-preview">{{ initial ?: '?' }}</span>
+            {% endif %}
+        </p>
+    </div>
+    <h2>Changer le mot de passe</h2>
+    <div class="form-group">
+        <label for="current_password">Mot de passe actuel</label>
+        <input type="password" id="current_password" name="current_password" autocomplete="current-password">
+    </div>
+    <div class="form-group">
+        <label for="new_password">Nouveau mot de passe (min. 6 caractères)</label>
+        <input type="password" id="new_password" name="new_password" autocomplete="new-password" minlength="6">
+    </div>
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+{% endblock %}

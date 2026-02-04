@@ -1,0 +1,23 @@
+parameters:
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Service\PdfService:
+        arguments:
+            $gotenbergUrl: '%env(GOTENBERG_URL)%'
+            $pdfDir: '%kernel.project_dir%/var/pdf'
+
+    App\Service\PdfQueueProcessor:
+        arguments:
+            $pdfDir: '%kernel.project_dir%/var/pdf'
+            $gotenbergUrl: '%env(GOTENBERG_URL)%'

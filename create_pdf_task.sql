@@ -1,0 +1,3 @@
+-- Exemple SQL pour créer une tâche PDF (référence, l'app utilise Doctrine)
+-- INSERT INTO pdf_task (user_id, status, type, payload, created_at, send_by_email)
+-- VALUES (1, 'pending', 'url', '{"url":"https://example.com"}', NOW(), 0);
